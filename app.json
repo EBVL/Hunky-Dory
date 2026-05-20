@@ -1,29 +1,43 @@
 {
   "expo": {
-    "name": "HunkyDory",
-    "slug": "HunkyDory",
+    "name": "Hunky Dory",
+    "slug": "hunky-dory",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#EFF4F2"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.hunkydory.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#EFF4F2"
       },
-      "edgeToEdgeEnabled": true
+      "package": "com.hunkydory.app"
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    }
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1a1a2e"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Hunky Dory to access your photos for meal check-ins.",
+          "cameraPermission": "Allow Hunky Dory to use your camera for meal photos."
+        }
+      ]
+    ]
   }
 }
