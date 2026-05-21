@@ -1,9 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, Switch } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, Switch, Linking, Alert } from "react-native";
 import { useState } from "react";
 import { useApp } from "../AppContext";
 
 export default function ContactSignInView() {
-  const { contactName, contactLoginPin, doContactLogin, signOut, darkMode, toggleDarkMode } = useApp();
+  const { contactName, contactLoginPin, contactEmail, doContactLogin, signOut, darkMode, toggleDarkMode } = useApp();
   const [staySignedIn, setStaySignedIn] = useState(true);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
@@ -24,15 +24,21 @@ export default function ContactSignInView() {
     }
   };
 
+  const handleForgotPin = () => {
+    if (!contactLoginPin) return;
+    if (!contactEmail) {
+      Alert.alert("No Email on File", "No email address was saved during setup. Please use a different account or contact support.");
+      return;
+    }
+    const subject = encodeURIComponent("Your Hunky Dory PIN");
+    const body = encodeURIComponent(`Hi ${contactName},\n\nYour Hunky Dory sign-in PIN is: ${contactLoginPin}\n\nKeep this safe!\n\n— The Hunky Dory Team`);
+    Linking.openURL(`mailto:${contactEmail}?subject=${subject}&body=${body}`).catch(() => {
+      Alert.alert("Couldn't Open Mail", "Please check that you have a mail app set up on this device.");
+    });
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg, alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <TouchableOpacity
-        onPress={toggleDarkMode}
-        style={{ position: "absolute", top: 16, right: 20, backgroundColor: dm ? "#334155" : "rgba(0,0,0,0.08)", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}
-      >
-        <Text style={{ fontSize: 18 }}>{dm ? "☀️" : "🌙"}</Text>
-      </TouchableOpacity>
-
       <Text style={{ fontSize: 56, marginBottom: 12 }}>🫂</Text>
       <Text style={{ fontSize: 28, fontWeight: "800", color: textColor, textAlign: "center", marginBottom: 4 }}>
         Welcome back!
@@ -71,6 +77,9 @@ export default function ContactSignInView() {
             {!!pinError && (
               <Text style={{ fontSize: 13, color: "#dc2626", marginTop: 6, textAlign: "center" }}>{pinError}</Text>
             )}
+            <TouchableOpacity onPress={handleForgotPin} style={{ marginTop: 10, alignItems: "center" }}>
+              <Text style={{ fontSize: 13, color: "#3B82F6", fontWeight: "600" }}>Forgot your PIN?</Text>
+            </TouchableOpacity>
           </View>
         )}
 

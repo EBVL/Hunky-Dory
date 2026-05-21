@@ -3,7 +3,7 @@ import { useApp } from "../AppContext";
 import { HunkyDoryBanner } from "../components/HunkyDoryHeader";
 
 export default function RoleSelectView() {
-  const { setRole, darkMode, toggleDarkMode } = useApp();
+  const { setRole, darkMode } = useApp();
   const dm = darkMode;
   const bg = dm ? "#0f172a" : "#EFF4F2";
   const textColor = dm ? "#f1f5f9" : "#1a1a2e";
@@ -14,23 +14,13 @@ export default function RoleSelectView() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
 
-      {/* Top third — hero banner with dark mode toggle in corner */}
-      <View style={{ flex: 1 }}>
-        <HunkyDoryBanner bgColor="#185FA5" style={{ flex: 1 }} />
-        <TouchableOpacity
-          onPress={toggleDarkMode}
-          style={{ position: "absolute", top: 12, right: 16, backgroundColor: "rgba(255,255,255,0.18)", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}
-        >
-          <Text style={{ fontSize: 18 }}>{dm ? "☀️" : "🌙"}</Text>
-        </TouchableOpacity>
+      {/* Top half — hero banner */}
+      <View style={{ flex: 2 }}>
+        <HunkyDoryBanner bgColor="#185FA5" style={{ flex: 1, justifyContent: "flex-end", paddingBottom: 28 }} />
       </View>
 
-      {/* Bottom two thirds — role selection */}
-      <View style={{ flex: 2, alignItems: "center", justifyContent: "center", padding: 24 }}>
-        <Text style={{ fontSize: 16, color: subtext, textAlign: "center", marginBottom: 36, lineHeight: 26, maxWidth: 300 }}>
-          Staying close to the people who matter most.
-        </Text>
-
+      {/* Bottom — role selection */}
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
         <View style={{ width: "100%", maxWidth: 380, gap: 16 }}>
           <TouchableOpacity
             onPress={() => setRole("contact")}

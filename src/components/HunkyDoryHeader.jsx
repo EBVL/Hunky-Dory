@@ -1,4 +1,5 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Modal } from "react-native";
+import { useState, useRef } from "react";
 import Svg, { G, Line, Path, Text as SvgText } from "react-native-svg";
 
 export function HunkyDoryLogo({ width = 80, color = "white" }) {
@@ -59,31 +60,36 @@ export default function HunkyDoryHeader({
   onSignOut,
   children,
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0 });
+  const burgerRef = useRef(null);
+
+  const openMenu = () => {
+    burgerRef.current?.measure((_x, _y, _w, h, _pageX, pageY) => {
+      setMenuPos({ top: pageY + h + 6 });
+      setMenuOpen(true);
+    });
+  };
+
   return (
     <View style={{ backgroundColor: bgColor, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18 }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+      <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "center", marginBottom: 10, minHeight: 38 }}>
+        {/* Logo + wordmark centered */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <HunkyDoryLogo width={32} />
-          <HunkyDoryWordmark width={110} />
+          <HunkyDoryLogo width={19} />
+          <HunkyDoryWordmark width={106} />
         </View>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          {!!onToggleDarkMode && (
-            <TouchableOpacity
-              onPress={onToggleDarkMode}
-              style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7 }}
-            >
-              <Text style={{ fontSize: 15 }}>{darkMode ? "☀️" : "🌙"}</Text>
-            </TouchableOpacity>
-          )}
-          {!!onSignOut && (
-            <TouchableOpacity
-              onPress={onSignOut}
-              style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 }}
-            >
-              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: "600" }}>Sign Out</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+
+        {/* Hamburger button pinned to the right */}
+        {(!!onToggleDarkMode || !!onSignOut) && (
+          <TouchableOpacity
+            ref={burgerRef}
+            onPress={openMenu}
+            style={{ position: "absolute", right: 0, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 }}
+          >
+            <Text style={{ color: "#fff", fontSize: 18, lineHeight: 20 }}>☰</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {!!label && <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 2 }}>{label}</Text>}
@@ -91,6 +97,45 @@ export default function HunkyDoryHeader({
       {!!subtitle && <Text style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>{subtitle}</Text>}
 
       {children}
+
+      {/* Settings dropdown */}
+      <Modal visible={menuOpen} transparent animationType="fade">
+        <View style={{ flex: 1 }} onTouchStart={() => setMenuOpen(false)}>
+          <View
+            style={{
+              position: "absolute", top: menuPos.top, right: 16,
+              backgroundColor: "#fff", borderRadius: 18,
+              shadowColor: "#000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 16, elevation: 12,
+              minWidth: 200, overflow: "hidden",
+            }}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
+            {!!onToggleDarkMode && (
+              <TouchableOpacity
+                onPress={() => onToggleDarkMode()}
+                style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, paddingVertical: 16 }}
+              >
+                <Text style={{ fontSize: 20 }}>{darkMode ? "☀️" : "🌙"}</Text>
+                <Text style={{ fontSize: 15, fontWeight: "600", color: "#1a1a2e" }}>
+                  {darkMode ? "Light Mode" : "Dark Mode"}
+                </Text>
+              </TouchableOpacity>
+            )}
+            {!!onToggleDarkMode && !!onSignOut && (
+              <View style={{ height: 1, backgroundColor: "#f1f5f9", marginHorizontal: 14 }} />
+            )}
+            {!!onSignOut && (
+              <TouchableOpacity
+                onPress={() => { setMenuOpen(false); onSignOut(); }}
+                style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 20, paddingVertical: 16 }}
+              >
+                <Text style={{ fontSize: 20 }}>🚪</Text>
+                <Text style={{ fontSize: 15, fontWeight: "600", color: "#dc2626" }}>Sign Out</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

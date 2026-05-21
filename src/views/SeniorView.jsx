@@ -21,7 +21,7 @@ const C = {
 
 export default function SeniorView() {
   const {
-    seniorSignOut, isPaid, seniorName, today,
+    seniorSignOut, isPaid, seniorName, seniorUsername, seniorPin, today,
     checkedInToday, checkInSchedule, completedCheckIns, canCheckIn, activeSlot,
     lastCheckIn, doCheckIn,
     showerStatus, showerDuration, doShowerIn, doShowerOut,
@@ -35,7 +35,7 @@ export default function SeniorView() {
   const [sosSent, setSosSent] = useState(false);
   const [sosHint, setSosHint] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
-  const lastSosTapRef = useRef(null);
+  const [showPin, setShowPin] = useState(false);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const sosFlashAnim = useRef(new Animated.Value(0)).current;
@@ -76,21 +76,15 @@ export default function SeniorView() {
   });
 
   const handleSosPress = () => {
-    const now = Date.now();
-    if (lastSosTapRef.current && now - lastSosTapRef.current < 2000) {
-      lastSosTapRef.current = null;
-      setSosHint(false);
-      setSosSent(true);
-      sendSOS();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } else {
-      lastSosTapRef.current = now;
-      setSosHint(true);
-      setTimeout(() => {
-        setSosHint(false);
-        lastSosTapRef.current = null;
-      }, 2500);
-    }
+    setSosHint(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+  };
+
+  const handleSosConfirm = () => {
+    setSosHint(false);
+    setSosSent(true);
+    sendSOS();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   };
 
   const now = new Date();
@@ -208,8 +202,6 @@ export default function SeniorView() {
         label={today()}
         title={`Good morning, ${seniorName}! 👋`}
         bgColor="#185FA5"
-        darkMode={darkMode}
-        onToggleDarkMode={toggleDarkMode}
         onSignOut={seniorSignOut}
       />
 
@@ -293,21 +285,20 @@ export default function SeniorView() {
           {medsTotal === 0 ? (
             <Text style={{ fontSize: 15, color: C.subtext, textAlign: "center", paddingVertical: 8 }}>No medications set up yet.</Text>
           ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
-              <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 4, paddingBottom: 4 }}>
-                {medications.map((med) => (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5 }}>
+              {medications.map((med) => (
+                <View key={med.id} style={{ width: "50%", padding: 5 }}>
                   <TouchableOpacity
-                    key={med.id}
                     onPress={() => {
                       toggleMed(med.id);
                       if (!med.taken) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     }}
                     style={{
-                      paddingVertical: 14, paddingHorizontal: 18, borderRadius: 16,
+                      paddingVertical: 14, paddingHorizontal: 10, borderRadius: 16,
                       borderWidth: 2,
                       borderColor: med.taken ? C.green : C.border,
                       backgroundColor: med.taken ? C.greenSurface : "#F9FAFB",
-                      alignItems: "center", gap: 6, minWidth: 90,
+                      alignItems: "center", gap: 6,
                     }}
                   >
                     <Text style={{ fontSize: 24 }}>{med.taken ? "✓" : "💊"}</Text>
@@ -316,9 +307,9 @@ export default function SeniorView() {
                     </Text>
                     <Text style={{ fontSize: 11, color: C.subtext }}>{med.time}</Text>
                   </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
+                </View>
+              ))}
+            </View>
           )}
         </View>
 
@@ -435,19 +426,47 @@ export default function SeniorView() {
           </View>
         )}
 
+        {/* ── Login info ─────────────────────────────────────────────────── */}
+        <View style={{
+          backgroundColor: C.white, borderRadius: 20, padding: 18, marginBottom: 14,
+          borderWidth: 2, borderColor: C.border,
+          shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2,
+        }}>
+          <Text style={{ fontSize: 11, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", color: C.subtext, marginBottom: 14 }}>
+            Your Login Info
+          </Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <Text style={{ fontSize: 14, color: C.subtext }}>Username</Text>
+            <Text style={{ fontSize: 15, fontWeight: "700", color: C.dark }}>{seniorUsername}</Text>
+          </View>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Text style={{ fontSize: 14, color: C.subtext }}>PIN</Text>
+            <TouchableOpacity onPress={() => setShowPin(v => !v)} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Text style={{ fontSize: 15, fontWeight: "700", color: C.dark, letterSpacing: showPin ? 1 : 6 }}>
+                {showPin ? seniorPin : "••••"}
+              </Text>
+              <Text style={{ fontSize: 12, color: "#3B82F6", fontWeight: "600" }}>{showPin ? "Hide" : "Show"}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
       </ScrollView>
 
-      {/* ── Fixed SOS button ─────────────────────────────────────────────────── */}
+      {/* ── Fixed help button ─────────────────────────────────────────────────── */}
       <View style={{ paddingHorizontal: 16, paddingBottom: 20, paddingTop: 10, backgroundColor: C.bg }}>
         {sosSent ? (
           <View style={{ gap: 10 }}>
             <View style={{
-              width: "100%", paddingVertical: 22, borderRadius: 18,
+              width: "100%", paddingVertical: 22, paddingHorizontal: 20, borderRadius: 18,
               backgroundColor: C.red, alignItems: "center",
               shadowColor: C.red, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.45, shadowRadius: 14, elevation: 8,
             }}>
-              <Text style={{ fontSize: 20, fontWeight: "900", color: C.white, letterSpacing: 1 }}>🚨  ALERT SENT</Text>
-              <Text style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 4 }}>{contactName} has been notified</Text>
+              <Text style={{ fontSize: 20, fontWeight: "900", color: C.white, textAlign: "center", marginBottom: 8 }}>
+                🚨 Your Emergency contact has been notified.
+              </Text>
+              <Text style={{ fontSize: 14, color: "rgba(255,255,255,0.92)", textAlign: "center", lineHeight: 21 }}>
+                If this is a life-threatening emergency, please call 911 immediately.
+              </Text>
             </View>
             <TouchableOpacity
               onPress={() => setSosSent(false)}
@@ -456,26 +475,52 @@ export default function SeniorView() {
               <Text style={{ fontSize: 16, color: C.red, fontWeight: "700" }}>I'm OK now — cancel alert</Text>
             </TouchableOpacity>
           </View>
-        ) : (
-          <View>
-            {sosHint && (
-              <Text style={{ textAlign: "center", color: C.red, fontWeight: "700", fontSize: 14, marginBottom: 8 }}>
-                ⚠️ Tap again to confirm SOS
+        ) : sosHint ? (
+          <View style={{ gap: 10 }}>
+            <View style={{
+              backgroundColor: "#FFF7ED", borderRadius: 18, padding: 20,
+              borderWidth: 2, borderColor: "#FCD34D",
+            }}>
+              <Text style={{ fontSize: 17, fontWeight: "800", color: "#92400E", textAlign: "center", marginBottom: 10 }}>
+                Is this a life-threatening emergency?
               </Text>
-            )}
+              <Text style={{ fontSize: 14, color: "#78350F", lineHeight: 22, textAlign: "center", marginBottom: 10 }}>
+                This button notifies your emergency contacts only. It does not contact 911 or emergency services.
+              </Text>
+              <Text style={{ fontSize: 13, color: "#92400E", lineHeight: 20, textAlign: "center", fontStyle: "italic" }}>
+                Hunky Dory is not an emergency dispatch service. Always call 911 in a life-threatening situation.
+              </Text>
+            </View>
             <TouchableOpacity
-              onPress={handleSosPress}
+              onPress={handleSosConfirm}
               activeOpacity={0.82}
               style={{
-                width: "100%", paddingVertical: 22, borderRadius: 18,
-                backgroundColor: sosHint ? "#b91c1c" : C.red,
-                alignItems: "center", justifyContent: "center",
+                width: "100%", paddingVertical: 20, borderRadius: 18,
+                backgroundColor: C.red, alignItems: "center",
                 shadowColor: C.red, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.45, shadowRadius: 14, elevation: 8,
               }}
             >
-              <Text style={{ fontSize: 24, fontWeight: "900", color: C.white, letterSpacing: 2 }}>🚨  SOS EMERGENCY</Text>
+              <Text style={{ fontSize: 20, fontWeight: "900", color: C.white }}>Notify My Contact</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setSosHint(false)}
+              style={{ width: "100%", paddingVertical: 14, borderRadius: 14, borderWidth: 2, borderColor: C.border, alignItems: "center" }}
+            >
+              <Text style={{ fontSize: 16, color: C.subtext, fontWeight: "600" }}>Cancel</Text>
             </TouchableOpacity>
           </View>
+        ) : (
+          <TouchableOpacity
+            onPress={handleSosPress}
+            activeOpacity={0.82}
+            style={{
+              width: "100%", paddingVertical: 22, borderRadius: 18,
+              backgroundColor: C.red, alignItems: "center", justifyContent: "center",
+              shadowColor: C.red, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.45, shadowRadius: 14, elevation: 8,
+            }}
+          >
+            <Text style={{ fontSize: 24, fontWeight: "900", color: C.white, letterSpacing: 1 }}>I need help</Text>
+          </TouchableOpacity>
         )}
       </View>
 

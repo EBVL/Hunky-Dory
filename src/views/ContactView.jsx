@@ -1,6 +1,10 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Modal, Image } from "react-native";
 import HunkyDoryHeader from "../components/HunkyDoryHeader";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+
+const ITEM_H = 52;
+const HOURS = [1,2,3,4,5,6,7,8,9,10,11,12];
+const MINS = Array.from({ length: 60 }, (_, i) => i);
 import { useApp } from "../AppContext";
 import * as Notifications from "expo-notifications";
 import * as Haptics from "expo-haptics";
@@ -11,8 +15,6 @@ const QUICK_MESSAGES = [
   { label: "📞 Call me!", text: "Give me a call when you get a chance!" },
   { label: "🌟 You're amazing", text: "You're doing amazing and I'm so proud of you!" },
 ];
-
-const TIME_OPTIONS = ["6:00 AM","7:00 AM","8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM","1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM","6:00 PM","7:00 PM","8:00 PM","9:00 PM","10:00 PM"];
 
 const logColors = {
   checkin: "#16a34a", shower: "#0891b2", medication: "#7c3aed",
@@ -35,6 +37,7 @@ export default function ContactView() {
     contactTab, setContactTab,
     sosAlert, dismissSOS,
     darkMode, toggleDarkMode,
+    seniorUsername, seniorPin,
   } = useApp();
 
   const [medForm, setMedForm] = useState({ name: "", time: "8:00 AM" });
@@ -43,7 +46,36 @@ export default function ContactView() {
   const [pairError, setPairError] = useState("");
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [showMedTimePicker, setShowMedTimePicker] = useState(false);
+  const [showInlineMedPicker, setShowInlineMedPicker] = useState(false);
+  const [showSeniorPin, setShowSeniorPin] = useState(false);
+
+  const hourScrollRef = useRef(null);
+  const minScrollRef = useRef(null);
+
+  useEffect(() => {
+    if (showInlineMedPicker) {
+      const t = setTimeout(() => {
+        hourScrollRef.current?.scrollTo({ y: (tpHour - 1) * ITEM_H, animated: false });
+        minScrollRef.current?.scrollTo({ y: tpMin * ITEM_H, animated: false });
+      }, 150);
+      return () => clearTimeout(t);
+    }
+  }, [showInlineMedPicker]);
+
+  // Spinner state — shared between both time pickers (only one open at a time)
+  const [tpHour, setTpHour] = useState(8);
+  const [tpMin, setTpMin] = useState(0);
+  const [tpPeriod, setTpPeriod] = useState("AM");
+
+  const fmtTime = () => `${tpHour}:${String(tpMin).padStart(2, "0")} ${tpPeriod}`;
+
+  const initPicker = (timeStr = "8:00 AM") => {
+    const [tp, per] = timeStr.split(" ");
+    const [h, m] = tp.split(":").map(Number);
+    setTpHour(h || 8);
+    setTpMin(m || 0);
+    setTpPeriod(per || "AM");
+  };
 
   const dm = darkMode;
   const bg = dm ? "#0f172a" : "#EFF4F2";
@@ -84,22 +116,15 @@ export default function ContactView() {
     }
   };
 
-  const openEditMed = (med) => { setEditingMed(med); setMedForm({ name: med.name, time: med.time }); setShowAddMed(true); };
-  const openAddMed = () => { setEditingMed(null); setMedForm({ name: "", time: "8:00 AM" }); setShowAddMed(true); };
-  const handleSaveMed = () => { if (!medForm.name.trim()) return; saveMed(medForm); setShowAddMed(false); };
+  const openEditMed = (med) => { setEditingMed(med); setMedForm({ name: med.name, time: med.time }); setShowInlineMedPicker(false); setShowAddMed(true); };
+  const openAddMed = () => { setEditingMed(null); setMedForm({ name: "", time: "8:00 AM" }); setShowInlineMedPicker(false); setShowAddMed(true); };
+  const handleSaveMed = () => { if (!medForm.name.trim()) return; saveMed(medForm); setShowInlineMedPicker(false); setShowAddMed(false); };
 
   // ── Pairing screen ─────────────────────────────────────────────────────────
   if (!isPaired) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: dm ? "#0f172a" : "#EFF4F2" }}>
         <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 24 }} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity
-            onPress={toggleDarkMode}
-            style={{ position: "absolute", top: 16, right: 20, backgroundColor: dm ? "#334155" : "rgba(0,0,0,0.08)", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}
-          >
-            <Text style={{ fontSize: 18 }}>{dm ? "☀️" : "🌙"}</Text>
-          </TouchableOpacity>
-
           <Text style={{ fontSize: 52, marginBottom: 12 }}>🫂</Text>
           <Text style={{ fontSize: 26, fontWeight: "700", color: textColor, textAlign: "center", marginBottom: 8 }}>
             Connect to {seniorName}
@@ -179,8 +204,8 @@ export default function ContactView() {
 
       {/* Medication modal */}
       <Modal visible={showAddMed} transparent animationType="slide">
-        <TouchableOpacity activeOpacity={1} onPress={() => setShowAddMed(false)} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" }}>
-          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" }} onTouchStart={() => { setShowAddMed(false); setShowInlineMedPicker(false); }}>
+          <View onTouchStart={e => e.stopPropagation()}>
             <View style={{ backgroundColor: cardBg, borderRadius: 24, padding: 28, paddingBottom: 40 }}>
               <Text style={{ fontSize: 20, fontWeight: "700", marginBottom: 20, color: textColor }}>{editingMed ? "Edit Medication" : "Add Medication"}</Text>
               <View style={{ marginBottom: 14 }}>
@@ -196,11 +221,68 @@ export default function ContactView() {
               <View style={{ marginBottom: 24 }}>
                 <Text style={{ fontSize: 14, color: subtext, marginBottom: 6 }}>Time to Take</Text>
                 <TouchableOpacity
-                  onPress={() => setShowMedTimePicker(true)}
-                  style={{ paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: borderColor, backgroundColor: inputBg }}
+                  onPress={() => { initPicker(medForm.time); setShowInlineMedPicker(v => !v); }}
+                  style={{ paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: borderColor, backgroundColor: inputBg, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
                 >
                   <Text style={{ fontSize: 16, color: textColor }}>{medForm.time}</Text>
+                  <Text style={{ fontSize: 13, color: "#185FA5", fontWeight: "600" }}>{showInlineMedPicker ? "Done ✓" : "Change"}</Text>
                 </TouchableOpacity>
+                {showInlineMedPicker && (
+                  <View style={{ marginTop: 10, borderRadius: 12, borderWidth: 1, borderColor: borderColor, backgroundColor: inputBg, overflow: "hidden" }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 8 }}>
+                      {/* Hour scroll */}
+                      <View style={{ height: ITEM_H * 3, width: 56, overflow: "hidden" }}>
+                        <ScrollView
+                          ref={hourScrollRef}
+                          showsVerticalScrollIndicator={false}
+                          snapToInterval={ITEM_H}
+                          decelerationRate="fast"
+                          onMomentumScrollEnd={e => { const idx = Math.max(0, Math.min(11, Math.round(e.nativeEvent.contentOffset.y / ITEM_H))); setTpHour(HOURS[idx]); }}
+                          onScrollEndDrag={e => { const idx = Math.max(0, Math.min(11, Math.round(e.nativeEvent.contentOffset.y / ITEM_H))); setTpHour(HOURS[idx]); }}
+                          contentContainerStyle={{ paddingVertical: ITEM_H }}
+                        >
+                          {HOURS.map(h => (
+                            <View key={h} style={{ height: ITEM_H, alignItems: "center", justifyContent: "center" }}>
+                              <Text style={{ fontSize: 28, fontWeight: "700", color: textColor }}>{h}</Text>
+                            </View>
+                          ))}
+                        </ScrollView>
+                      </View>
+                      <Text style={{ fontSize: 28, fontWeight: "800", color: textColor, marginHorizontal: 4 }}>:</Text>
+                      {/* Minute scroll */}
+                      <View style={{ height: ITEM_H * 3, width: 64, overflow: "hidden" }}>
+                        <ScrollView
+                          ref={minScrollRef}
+                          showsVerticalScrollIndicator={false}
+                          snapToInterval={ITEM_H}
+                          decelerationRate="fast"
+                          onMomentumScrollEnd={e => { const idx = Math.max(0, Math.min(59, Math.round(e.nativeEvent.contentOffset.y / ITEM_H))); setTpMin(MINS[idx]); }}
+                          onScrollEndDrag={e => { const idx = Math.max(0, Math.min(59, Math.round(e.nativeEvent.contentOffset.y / ITEM_H))); setTpMin(MINS[idx]); }}
+                          contentContainerStyle={{ paddingVertical: ITEM_H }}
+                        >
+                          {MINS.map(m => (
+                            <View key={m} style={{ height: ITEM_H, alignItems: "center", justifyContent: "center" }}>
+                              <Text style={{ fontSize: 28, fontWeight: "700", color: textColor }}>{String(m).padStart(2, "0")}</Text>
+                            </View>
+                          ))}
+                        </ScrollView>
+                      </View>
+                      {/* AM/PM */}
+                      <TouchableOpacity
+                        onPress={() => setTpPeriod(p => p === "AM" ? "PM" : "AM")}
+                        style={{ marginLeft: 12, backgroundColor: "#185FA5", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 }}
+                      >
+                        <Text style={{ fontSize: 18, fontWeight: "800", color: "#fff" }}>{tpPeriod}</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => { setMedForm(f => ({ ...f, time: fmtTime() })); setShowInlineMedPicker(false); }}
+                      style={{ margin: 12, marginTop: 4, padding: 14, borderRadius: 50, borderWidth: 2, borderColor: "#1a1a2e", backgroundColor: dm ? "#1e293b" : "#F8F9F6", alignItems: "center" }}
+                    >
+                      <Text style={{ fontSize: 16, fontWeight: "700", color: textColor }}>Set {tpHour}:{String(tpMin).padStart(2, "0")} {tpPeriod} →</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
               <View style={{ flexDirection: "row", gap: 10 }}>
                 <TouchableOpacity onPress={() => setShowAddMed(false)} style={{ flex: 1, padding: 14, borderRadius: 50, borderWidth: 1, borderColor: borderColor, backgroundColor: dm ? "#0f172a" : "#f9f9f9", alignItems: "center" }}>
@@ -211,43 +293,58 @@ export default function ContactView() {
                 </TouchableOpacity>
               </View>
             </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Med time picker modal */}
-      <Modal visible={showMedTimePicker} transparent animationType="slide">
-        <TouchableOpacity activeOpacity={1} onPress={() => setShowMedTimePicker(false)} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" }}>
-          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-            <View style={{ backgroundColor: cardBg, borderRadius: 24, padding: 20, paddingBottom: 40, maxHeight: 400 }}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: textColor, marginBottom: 14, textAlign: "center" }}>Select Time</Text>
-              <ScrollView>
-                {TIME_OPTIONS.map((t) => (
-                  <TouchableOpacity key={t} onPress={() => { setMedForm((f) => ({ ...f, time: t })); setShowMedTimePicker(false); }}
-                    style={{ padding: 16, borderRadius: 12, marginBottom: 6, backgroundColor: medForm.time === t ? (dm ? "#334155" : "#e8ebe8") : "transparent", alignItems: "center" }}>
-                    <Text style={{ fontSize: 17, color: textColor, fontWeight: medForm.time === t ? "700" : "400" }}>{t}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
 
       {/* Time picker for check-in schedule */}
       <Modal visible={showTimePicker} transparent animationType="slide">
         <TouchableOpacity activeOpacity={1} onPress={() => setShowTimePicker(false)} style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" }}>
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
-            <View style={{ backgroundColor: cardBg, borderRadius: 24, padding: 20, paddingBottom: 40, maxHeight: 400 }}>
-              <Text style={{ fontSize: 17, fontWeight: "700", color: textColor, marginBottom: 14, textAlign: "center" }}>Add Check-In Time</Text>
-              <ScrollView>
-                {TIME_OPTIONS.map((t) => (
-                  <TouchableOpacity key={t} onPress={() => { addCheckInTime(t); setShowTimePicker(false); }}
-                    style={{ padding: 16, borderRadius: 12, marginBottom: 6, alignItems: "center" }}>
-                    <Text style={{ fontSize: 17, color: textColor }}>{t}</Text>
+            <View style={{ backgroundColor: cardBg, borderRadius: 24, padding: 24, paddingBottom: 40 }}>
+              <Text style={{ fontSize: 17, fontWeight: "700", color: textColor, marginBottom: 4, textAlign: "center" }}>Add Check-In Time</Text>
+              <Text style={{ fontSize: 13, color: subtext, textAlign: "center", marginBottom: 20 }}>Tap ▲ ▼ to change • tap AM/PM to switch</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                {/* Hour */}
+                <View style={{ alignItems: "center" }}>
+                  <TouchableOpacity onPress={() => setTpHour(h => h === 12 ? 1 : h + 1)} style={{ padding: 12 }}>
+                    <Text style={{ fontSize: 22, color: "#185FA5" }}>▲</Text>
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
+                  <Text style={{ fontSize: 42, fontWeight: "800", color: textColor, width: 58, textAlign: "center" }}>{tpHour}</Text>
+                  <TouchableOpacity onPress={() => setTpHour(h => h === 1 ? 12 : h - 1)} style={{ padding: 12 }}>
+                    <Text style={{ fontSize: 22, color: "#185FA5" }}>▼</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={{ fontSize: 42, fontWeight: "800", color: textColor, marginBottom: 2 }}>:</Text>
+                {/* Minute */}
+                <View style={{ alignItems: "center" }}>
+                  <TouchableOpacity onPress={() => setTpMin(m => (m + 1) % 60)} style={{ padding: 12 }}>
+                    <Text style={{ fontSize: 22, color: "#185FA5" }}>▲</Text>
+                  </TouchableOpacity>
+                  <Text style={{ fontSize: 42, fontWeight: "800", color: textColor, width: 58, textAlign: "center" }}>{String(tpMin).padStart(2, "0")}</Text>
+                  <TouchableOpacity onPress={() => setTpMin(m => m === 0 ? 59 : m - 1)} style={{ padding: 12 }}>
+                    <Text style={{ fontSize: 22, color: "#185FA5" }}>▼</Text>
+                  </TouchableOpacity>
+                </View>
+                {/* AM/PM */}
+                <TouchableOpacity
+                  onPress={() => setTpPeriod(p => p === "AM" ? "PM" : "AM")}
+                  style={{ marginLeft: 10, backgroundColor: "#185FA5", borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14 }}
+                >
+                  <Text style={{ fontSize: 20, fontWeight: "800", color: "#fff" }}>{tpPeriod}</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10, marginTop: 24 }}>
+                <TouchableOpacity onPress={() => setShowTimePicker(false)} style={{ flex: 1, padding: 14, borderRadius: 50, borderWidth: 1, borderColor: borderColor, backgroundColor: dm ? "#0f172a" : "#f9f9f9", alignItems: "center" }}>
+                  <Text style={{ fontSize: 16, color: subtext }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => { addCheckInTime(fmtTime()); setShowTimePicker(false); }}
+                  style={{ flex: 2, padding: 14, borderRadius: 50, borderWidth: 2, borderColor: "#1a1a2e", backgroundColor: dm ? "#1e293b" : "#F8F9F6", alignItems: "center" }}
+                >
+                  <Text style={{ fontSize: 16, fontWeight: "700", color: textColor }}>Add {tpHour}:{String(tpMin).padStart(2,"0")} {tpPeriod} →</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -258,8 +355,6 @@ export default function ContactView() {
         title={`Hi ${contactName} 👋`}
         subtitle={`Watching over ${seniorName}`}
         bgColor="#185FA5"
-        darkMode={dm}
-        onToggleDarkMode={toggleDarkMode}
         onSignOut={contactSignOut}
       >
         {missedCheckIn ? (
@@ -353,44 +448,72 @@ export default function ContactView() {
                   })}
                 </View>
               )}
-              <TouchableOpacity onPress={() => setShowTimePicker(true)} style={{ width: "100%", padding: 14, borderRadius: 12, borderWidth: 1, borderColor: borderColor, backgroundColor: dm ? "#1e293b" : "#F8F9F6", alignItems: "center" }}>
+              <TouchableOpacity onPress={() => { initPicker("8:00 AM"); setShowTimePicker(true); }} style={{ width: "100%", padding: 14, borderRadius: 12, borderWidth: 1, borderColor: borderColor, backgroundColor: dm ? "#1e293b" : "#F8F9F6", alignItems: "center" }}>
                 <Text style={{ fontSize: 15, fontWeight: "700", color: textColor }}>+ Add Check-In Time</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Status grid — horizontal scroll so text doesn't wrap */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }} contentContainerStyle={{ gap: 12, paddingRight: 4 }}>
-              <View style={{ ...card, margin: 0, marginBottom: 0, width: 130, borderLeftWidth: 4, borderLeftColor: checkedInToday ? "#16a34a" : "#dc2626" }}>
-                <Text style={{ fontSize: 11, fontWeight: "700", color: subtext, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Check-In</Text>
-                <Text style={{ fontSize: 28 }}>{checkedInToday ? "✅" : "❓"}</Text>
-                <Text style={{ fontSize: 13, fontWeight: "600", color: checkedInToday ? "#16a34a" : "#dc2626", marginTop: 4 }}>
-                  {checkedInToday ? lastCheckIn : `${checkInCount}/${Math.max(requiredCheckIns, 1)}`}
-                </Text>
-              </View>
-              {isPaid && (
-                <View style={{ ...card, margin: 0, marginBottom: 0, width: 130, borderLeftWidth: 4, borderLeftColor: showerStatus === "in" ? "#0891b2" : showerStatus === "out" ? "#16a34a" : borderColor }}>
-                  <Text style={{ fontSize: 11, fontWeight: "700", color: subtext, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Shower</Text>
-                  <Text style={{ fontSize: 28 }}>🚿</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "600", marginTop: 4, color: showerStatus === "in" ? "#0891b2" : showerStatus === "out" ? "#16a34a" : subtext }}>
-                    {showerStatus === "in" ? `In shower${showerMinutes !== null ? ` · ${showerMinutes}m` : ""}` : showerStatus === "out" ? `Done${showerDuration ? ` · ${showerDuration}m` : ""}` : "No activity"}
+            {/* 2×2 status grid */}
+            <View style={{ gap: 12, marginBottom: 16 }}>
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <View style={{ flex: 1, ...card, margin: 0, marginBottom: 0, padding: 14, borderLeftWidth: 4, borderLeftColor: checkedInToday ? "#16a34a" : "#dc2626" }}>
+                  <Text style={{ fontSize: 10, fontWeight: "700", color: subtext, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Check-In</Text>
+                  <Text style={{ fontSize: 26 }}>{checkedInToday ? "✅" : "❓"}</Text>
+                  <Text style={{ fontSize: 12, fontWeight: "600", color: checkedInToday ? "#16a34a" : "#dc2626", marginTop: 4 }}>
+                    {checkedInToday ? lastCheckIn : `${checkInCount}/${Math.max(requiredCheckIns, 1)}`}
                   </Text>
                 </View>
-              )}
-              {isPaid && (
-                <View style={{ ...card, margin: 0, marginBottom: 0, width: 130, borderLeftWidth: 4, borderLeftColor: "#7c3aed" }}>
-                  <Text style={{ fontSize: 11, fontWeight: "700", color: subtext, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Meds</Text>
-                  <Text style={{ fontSize: 28 }}>💊</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#7c3aed", marginTop: 4 }}>{medications.filter((m) => m.taken).length}/{medications.length} taken</Text>
+                <View style={{ flex: 1, ...card, margin: 0, marginBottom: 0, padding: 14, borderLeftWidth: 4, borderLeftColor: isPaid ? (showerStatus === "in" ? "#0891b2" : showerStatus === "out" ? "#16a34a" : borderColor) : borderColor }}>
+                  <Text style={{ fontSize: 10, fontWeight: "700", color: subtext, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Shower</Text>
+                  <Text style={{ fontSize: 26 }}>🚿</Text>
+                  {isPaid ? (
+                    <Text style={{ fontSize: 12, fontWeight: "600", marginTop: 4, color: showerStatus === "in" ? "#0891b2" : showerStatus === "out" ? "#16a34a" : subtext }}>
+                      {showerStatus === "in" ? `In shower${showerMinutes !== null ? ` · ${showerMinutes}m` : ""}` : showerStatus === "out" ? `Done${showerDuration ? ` · ${showerDuration}m` : ""}` : "No activity"}
+                    </Text>
+                  ) : (
+                    <Text style={{ fontSize: 11, color: subtext, marginTop: 4 }}>Premium</Text>
+                  )}
                 </View>
-              )}
-              {isPaid && (
-                <View style={{ ...card, margin: 0, marginBottom: 0, width: 130, borderLeftWidth: 4, borderLeftColor: "#d97706" }}>
-                  <Text style={{ fontSize: 11, fontWeight: "700", color: subtext, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Meals</Text>
-                  <Text style={{ fontSize: 28 }}>🍽️</Text>
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#d97706", marginTop: 4 }}>{mealCount} meal{mealCount !== 1 ? "s" : ""} today</Text>
+              </View>
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <View style={{ flex: 1, ...card, margin: 0, marginBottom: 0, padding: 14, borderLeftWidth: 4, borderLeftColor: "#7c3aed" }}>
+                  <Text style={{ fontSize: 10, fontWeight: "700", color: subtext, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Meds</Text>
+                  <Text style={{ fontSize: 26 }}>💊</Text>
+                  {isPaid ? (
+                    <Text style={{ fontSize: 12, fontWeight: "600", color: "#7c3aed", marginTop: 4 }}>{medications.filter((m) => m.taken).length}/{medications.length} taken</Text>
+                  ) : (
+                    <Text style={{ fontSize: 11, color: subtext, marginTop: 4 }}>Premium</Text>
+                  )}
                 </View>
-              )}
-            </ScrollView>
+                <View style={{ flex: 1, ...card, margin: 0, marginBottom: 0, padding: 14, borderLeftWidth: 4, borderLeftColor: "#d97706" }}>
+                  <Text style={{ fontSize: 10, fontWeight: "700", color: subtext, letterSpacing: 1, textTransform: "uppercase", marginBottom: 8 }}>Meals</Text>
+                  <Text style={{ fontSize: 26 }}>🍽️</Text>
+                  {isPaid ? (
+                    <Text style={{ fontSize: 12, fontWeight: "600", color: "#d97706", marginTop: 4 }}>{mealCount} meal{mealCount !== 1 ? "s" : ""} today</Text>
+                  ) : (
+                    <Text style={{ fontSize: 11, color: subtext, marginTop: 4 }}>Premium</Text>
+                  )}
+                </View>
+              </View>
+            </View>
+
+            {/* Senior login info */}
+            <View style={card}>
+              <Text style={sectionLabel}>{seniorName}'s Login Info</Text>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <Text style={{ fontSize: 14, color: subtext }}>Username</Text>
+                <Text style={{ fontSize: 15, fontWeight: "700", color: textColor }}>{seniorUsername}</Text>
+              </View>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={{ fontSize: 14, color: subtext }}>PIN</Text>
+                <TouchableOpacity onPress={() => setShowSeniorPin(v => !v)} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <Text style={{ fontSize: 15, fontWeight: "700", color: textColor, letterSpacing: showSeniorPin ? 1 : 6 }}>
+                    {showSeniorPin ? seniorPin : "••••"}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: "#3B82F6", fontWeight: "600" }}>{showSeniorPin ? "Hide" : "Show"}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
 
             {/* Activity log */}
             <View style={card}>
@@ -420,6 +543,11 @@ export default function ContactView() {
         {/* ── Medications tab ── */}
         {contactTab === "medications" && (
           <View>
+            <View style={{ padding: 16, backgroundColor: dm ? "#1e1a00" : "#fffbeb", borderWidth: 1, borderColor: "#fde68a", borderRadius: 14, marginBottom: 16 }}>
+              <Text style={{ fontSize: 13, color: dm ? "#fcd34d" : "#92400e", lineHeight: 21 }}>
+                Medication reminders are for family coordination only. Always follow the instructions of your loved one's doctor or pharmacist. Hunky Dory is not a medical service and does not provide clinical or professional healthcare advice.
+              </Text>
+            </View>
             <View style={card}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                 <Text style={sectionLabel}>{seniorName}'s Medications</Text>

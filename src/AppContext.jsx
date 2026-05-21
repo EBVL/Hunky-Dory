@@ -22,6 +22,7 @@ export function AppProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [role, setRoleRaw] = useState(null);
   const [seniorLoggedIn, setSeniorLoggedIn] = useState(false);
+  const [seniorAcknowledged, setSeniorAcknowledged] = useState(false);
   const [contactLoggedIn, setContactLoggedIn] = useState(false);
   const [contactOnboarded, setContactOnboarded] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -35,6 +36,7 @@ export function AppProvider({ children }) {
   const [contactLoginPin, setContactLoginPinRaw] = useState("");
   const [contactPhone, setContactPhoneRaw] = useState("");
   const [contactBackupPhone, setContactBackupPhoneRaw] = useState("");
+  const [contactEmail, setContactEmailRaw] = useState("");
   const [takenUsernames, setTakenUsernames] = useState([]);
 
   const [checkedInToday, setCheckedInToday] = useState(false);
@@ -63,7 +65,7 @@ export function AppProvider({ children }) {
         const [
           seniorIn, dark, paid, uname, pin, sName, cName, schedule, meds,
           contactIn, contactOnb, cPhoto, mCount, taken,
-          paired, cLoginPin, cPhone, cBackupPhone, storedRole,
+          paired, cLoginPin, cPhone, cBackupPhone, storedRole, cEmail, seniorAck,
         ] = await Promise.all([
           lg("bh_senior_in"),
           lg("bh_dark"),
@@ -84,8 +86,11 @@ export function AppProvider({ children }) {
           lg("bh_contact_phone"),
           lg("bh_contact_backup_phone"),
           lg("bh_role"),
+          lg("bh_contact_email"),
+          lg("bh_senior_ack"),
         ]);
         if (seniorIn === "1") setSeniorLoggedIn(true);
+        if (seniorAck === "1") setSeniorAcknowledged(true);
         if (dark === "1") setDarkMode(true);
         if (paid === "1") setIsPaidRaw(true);
         if (uname) setSeniorUsername(uname);
@@ -104,6 +109,7 @@ export function AppProvider({ children }) {
         if (cPhone) setContactPhoneRaw(cPhone);
         if (cBackupPhone) setContactBackupPhoneRaw(cBackupPhone);
         if (storedRole) setRoleRaw(storedRole);
+        if (cEmail) setContactEmailRaw(cEmail);
       } catch {}
       setIsLoading(false);
     };
@@ -122,6 +128,11 @@ export function AppProvider({ children }) {
   const doSeniorLogin = () => {
     setSeniorLoggedIn(true);
     ls("bh_senior_in", "1");
+  };
+
+  const doSeniorAcknowledge = () => {
+    setSeniorAcknowledged(true);
+    ls("bh_senior_ack", "1");
   };
 
   const seniorSignOut = () => {
@@ -176,6 +187,11 @@ export function AppProvider({ children }) {
   const setContactBackupPhone = (phone) => {
     setContactBackupPhoneRaw(phone);
     ls("bh_contact_backup_phone", phone);
+  };
+
+  const setContactEmail = (email) => {
+    setContactEmailRaw(email);
+    ls("bh_contact_email", email);
   };
 
   const isUsernameTaken = (username) => {
@@ -356,7 +372,7 @@ export function AppProvider({ children }) {
     <AppContext.Provider value={{
       isLoading,
       role, setRole,
-      seniorLoggedIn, doSeniorLogin, seniorSignOut,
+      seniorLoggedIn, doSeniorLogin, seniorAcknowledged, doSeniorAcknowledge, seniorSignOut,
       contactLoggedIn, doContactLogin, contactSignOut,
       contactOnboarded, doContactOnboard,
       darkMode, toggleDarkMode,
@@ -369,6 +385,7 @@ export function AppProvider({ children }) {
       contactLoginPin, setContactCredentials,
       contactPhone, setContactPhone,
       contactBackupPhone, setContactBackupPhone,
+      contactEmail, setContactEmail,
       signOut,
       today,
       checkedInToday, lastCheckIn, checkInSchedule, completedCheckIns,

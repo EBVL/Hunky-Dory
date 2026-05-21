@@ -1,10 +1,11 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Switch, Image, Keyboard } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Switch, Image, Keyboard, Animated, useWindowDimensions } from "react-native";
 import { useState, useRef, useEffect } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { useApp } from "../AppContext";
 import * as ImagePicker from "expo-image-picker";
+import { HunkyDoryLogo, HunkyDoryBanner } from "../components/HunkyDoryHeader";
 
-const TOTAL_SLIDES = 13;
+const TOTAL_SLIDES = 15;
 
 const FEATURES_PAID = [
   { icon: "🚿", label: "Shower safety monitoring", desc: "Know when they get in and out" },
@@ -20,6 +21,7 @@ export default function ContactOnboardingView() {
   const {
     doContactOnboard, saveLovedOneName, setContactName, setContactPhoto,
     setIsPaid, setContactCredentials, setContactPhone, setContactBackupPhone,
+    setContactEmail,
     setCredentials, isUsernameTaken,
     darkMode, toggleDarkMode, signOut,
   } = useApp();
@@ -30,6 +32,8 @@ export default function ContactOnboardingView() {
   const [photoUri, setPhotoUri] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [backupPhone, setBackupPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [newPin, setNewPin] = useState("");
   const [pinConfirm, setPinConfirm] = useState("");
   const [pinError, setPinError] = useState("");
@@ -38,13 +42,29 @@ export default function ContactOnboardingView() {
   const [seniorPinError, setSeniorPinError] = useState("");
   const [seniorUsernameError, setSeniorUsernameError] = useState("");
   const [staySignedIn, setStaySignedIn] = useState(true);
+  const [medDisclaimerChecked, setMedDisclaimerChecked] = useState(false);
 
   const lovedOneNameRef = useRef(null);
   const caregiverNameRef = useRef(null);
   const phoneNumberRef = useRef(null);
   const backupPhoneRef = useRef(null);
+  const emailRef = useRef(null);
   const newPinRef = useRef(null);
   const seniorUsernameRef = useRef(null);
+
+  const { width: screenWidth } = useWindowDimensions();
+  const TRACK_PAD = 32;
+  const BOAT_W = 16;
+  const BOAT_PX_W = Math.round(400 * BOAT_W / 110); // ~58px actual rendered width
+  const BOAT_PX_H = Math.round(320 * BOAT_W / 110); // ~47px actual rendered height
+  const WATERLINE_Y = Math.round(283 * BOAT_W / 110); // ~41px — bottom of hull
+  const trackWidth = screenWidth - TRACK_PAD * 2;
+  const boatX = useRef(new Animated.Value(TRACK_PAD - BOAT_PX_W / 2)).current;
+
+  useEffect(() => {
+    const toValue = TRACK_PAD + (slide / (TOTAL_SLIDES - 1)) * trackWidth - BOAT_PX_W / 2;
+    Animated.spring(boatX, { toValue, useNativeDriver: true, tension: 80, friction: 9 }).start();
+  }, [slide, trackWidth]);
 
   useEffect(() => {
     const map = {
@@ -52,8 +72,9 @@ export default function ContactOnboardingView() {
       4: caregiverNameRef,
       6: phoneNumberRef,
       7: backupPhoneRef,
-      10: seniorUsernameRef,
-      11: newPinRef,
+      8: emailRef,
+      11: seniorUsernameRef,
+      12: newPinRef,
     };
     const ref = map[slide];
     if (!ref) return;
@@ -96,6 +117,16 @@ export default function ContactOnboardingView() {
     next();
   };
 
+  const handleEmailNext = () => {
+    const trimmed = email.trim();
+    if (trimmed && !trimmed.includes("@")) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+    if (trimmed) setContactEmail(trimmed);
+    next();
+  };
+
   const handleCredentialsNext = () => {
     if (!/^\d{4}$/.test(newPin)) { setPinError("PIN must be exactly 4 digits."); return; }
     if (newPin !== pinConfirm) { setPinError("PINs don't match. Please try again."); return; }
@@ -120,10 +151,14 @@ export default function ContactOnboardingView() {
     doContactOnboard(staySignedIn);
   };
 
-  // ── Progress bar ──────────────────────────────────────────────────────────
+  // ── Boat progress bar ─────────────────────────────────────────────────────
   const ProgressBar = () => (
-    <View style={{ position: "absolute", top: 54, left: 0, right: 0, height: 4, backgroundColor: "rgba(255,255,255,0.2)", zIndex: 100 }}>
-      <View style={{ height: 4, backgroundColor: "rgba(255,255,255,0.9)", width: `${((slide + 1) / TOTAL_SLIDES) * 100}%` }} />
+    <View style={{ position: "absolute", top: 10, left: 0, right: 0, height: BOAT_PX_H + 8, zIndex: 100, pointerEvents: "none" }}>
+      <View style={{ position: "absolute", top: WATERLINE_Y, left: TRACK_PAD, right: TRACK_PAD, height: 3, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 2 }} />
+      <View style={{ position: "absolute", top: WATERLINE_Y, left: TRACK_PAD, width: (slide / (TOTAL_SLIDES - 1)) * trackWidth, height: 3, backgroundColor: "rgba(255,255,255,0.45)", borderRadius: 2 }} />
+      <Animated.View style={{ position: "absolute", top: 0, left: 0, transform: [{ translateX: boatX }] }}>
+        <HunkyDoryLogo width={BOAT_W} color="rgba(255,255,255,0.95)" />
+      </Animated.View>
     </View>
   );
 
@@ -131,18 +166,9 @@ export default function ContactOnboardingView() {
   const BackBtn = () => (
     <TouchableOpacity
       onPress={back}
-      style={{ position: "absolute", top: 62, left: 20, zIndex: 10, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}
+      style={{ position: "absolute", top: 68, left: 20, zIndex: 10, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}
     >
       <Text style={{ fontSize: 15, color: "#fff", fontWeight: "600" }}>← Back</Text>
-    </TouchableOpacity>
-  );
-
-  const DarkToggle = () => (
-    <TouchableOpacity
-      onPress={toggleDarkMode}
-      style={{ position: "absolute", top: 62, right: 20, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, zIndex: 10 }}
-    >
-      <Text style={{ fontSize: 18 }}>{dm ? "☀️" : "🌙"}</Text>
     </TouchableOpacity>
   );
 
@@ -167,57 +193,55 @@ export default function ContactOnboardingView() {
 
   // ── Slide 0: It's time to breathe ─────────────────────────────────────────
   if (slide === 0) return (
-    <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
-      <LinearGradient colors={["#071829", "#0c2d5a"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
-        <ProgressBar />
-        <BackBtn />
-        <DarkToggle />
-        <Text style={{ fontSize: 72, marginBottom: 24 }}>🫂</Text>
-        <Text style={{ fontSize: 34, fontWeight: "800", color: "#fff", textAlign: "center", lineHeight: 44 }}>It's time to breathe.</Text>
-        <TapHint />
-      </LinearGradient>
-    </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#071829" }}>
+      <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
+        <LinearGradient colors={["#071829", "#0c2d5a"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
+          <ProgressBar />
+          <BackBtn />
+          <Text style={{ fontSize: 34, fontWeight: "800", color: "#fff", textAlign: "center", lineHeight: 44 }}>It's time to board.</Text>
+          <TapHint />
+        </LinearGradient>
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 
   // ── Slide 1: Your loved one is safe ───────────────────────────────────────
   if (slide === 1) return (
-    <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
-      <LinearGradient colors={["#0c2d5a", "#185FA5"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
-        <ProgressBar />
-        <BackBtn />
-        <DarkToggle />
-        <Text style={{ fontSize: 72, marginBottom: 24 }}>💚</Text>
-        <Text style={{ fontSize: 34, fontWeight: "800", color: "#fff", textAlign: "center", lineHeight: 44 }}>Your loved one is safe.</Text>
-        <TapHint />
-      </LinearGradient>
-    </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#0c2d5a" }}>
+      <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
+        <LinearGradient colors={["#0c2d5a", "#185FA5"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
+          <ProgressBar />
+          <BackBtn />
+          <Text style={{ fontSize: 34, fontWeight: "800", color: "#fff", textAlign: "center", lineHeight: 44 }}>You steer and your loved one sails.</Text>
+          <TapHint />
+        </LinearGradient>
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 
   // ── Slide 2: With Hunky Dory ───────────────────────────────────────────────
   if (slide === 2) return (
-    <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
-      <LinearGradient colors={["#185FA5", "#1a72c4"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
-        <ProgressBar />
-        <BackBtn />
-        <DarkToggle />
-        <Text style={{ fontSize: 72, marginBottom: 24 }}>🫂</Text>
-        <Text style={{ fontSize: 28, fontWeight: "800", color: "#fff", textAlign: "center", lineHeight: 40, maxWidth: 320 }}>
-          With Hunky Dory you can help keep track of your independent loved one.
-        </Text>
-        <TapHint />
-      </LinearGradient>
-    </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#185FA5" }}>
+      <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
+        <LinearGradient colors={["#185FA5", "#1a72c4"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
+          <ProgressBar />
+          <BackBtn />
+          <Text style={{ fontSize: 28, fontWeight: "800", color: "#fff", textAlign: "center", lineHeight: 40, maxWidth: 320 }}>
+            Now you can help keep track, and make sure your loved one is taken care of.
+          </Text>
+          <TapHint />
+        </LinearGradient>
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 
   // ── Slide 3: Loved one's name ──────────────────────────────────────────────
   if (slide === 3) return (
-    <LinearGradient colors={["#1a72c4", "#185FA5"]} style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#1a72c4" }}>
+      <LinearGradient colors={["#1a72c4", "#185FA5"]} style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
-        <DarkToggle />
-        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 110 }} keyboardShouldPersistTaps="handled">
-          <Text style={{ fontSize: 64, marginBottom: 16 }}>💛</Text>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 116 }} keyboardShouldPersistTaps="handled">
           <Text style={{ fontSize: 26, fontWeight: "800", color: "#fff", textAlign: "center", marginBottom: 32, lineHeight: 36 }}>What's your loved one's name?</Text>
           <TextInput
             ref={lovedOneNameRef}
@@ -230,19 +254,17 @@ export default function ContactOnboardingView() {
           />
           <ContinueBtn active={!!lovedOneName.trim()} onPress={handleLovedOneNameNext} />
         </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+      </LinearGradient>
+    </SafeAreaView>
   );
 
   // ── Slide 4: Caregiver's name ──────────────────────────────────────────────
   if (slide === 4) return (
-    <LinearGradient colors={["#185FA5", "#0e4d7a"]} style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#185FA5" }}>
+      <LinearGradient colors={["#185FA5", "#0e4d7a"]} style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
-        <DarkToggle />
-        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 110 }} keyboardShouldPersistTaps="handled">
-          <Text style={{ fontSize: 64, marginBottom: 16 }}>🙋</Text>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 116 }} keyboardShouldPersistTaps="handled">
           <Text style={{ fontSize: 26, fontWeight: "800", color: "#fff", textAlign: "center", marginBottom: 8, lineHeight: 36 }}>And what's your name?</Text>
           <Text style={{ fontSize: 16, color: "rgba(255,255,255,0.7)", textAlign: "center", marginBottom: 32, maxWidth: 280, lineHeight: 24 }}>
             So {lovedOneName || "your loved one"} knows who's watching over them.
@@ -258,18 +280,17 @@ export default function ContactOnboardingView() {
           />
           <ContinueBtn active={!!caregiverName.trim()} onPress={handleCaregiverNameNext} />
         </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+      </LinearGradient>
+    </SafeAreaView>
   );
 
   // ── Slide 5: Your photo ────────────────────────────────────────────────────
   if (slide === 5) return (
-    <LinearGradient colors={["#0e4d7a", "#0c2d5a"]} style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#0e4d7a" }}>
+      <LinearGradient colors={["#0e4d7a", "#0c2d5a"]} style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
-        <DarkToggle />
-        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 110 }} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 116 }} keyboardShouldPersistTaps="handled">
           <Text style={{ fontSize: 26, fontWeight: "800", color: "#fff", textAlign: "center", marginBottom: 8, lineHeight: 36 }}>
             Add a photo of yourself
           </Text>
@@ -281,7 +302,6 @@ export default function ContactOnboardingView() {
               <Image source={{ uri: photoUri }} style={{ width: 140, height: 140, borderRadius: 70, borderWidth: 4, borderColor: "#fff" }} />
             ) : (
               <View style={{ width: 140, height: 140, borderRadius: 70, backgroundColor: "rgba(255,255,255,0.15)", borderWidth: 3, borderColor: "rgba(255,255,255,0.4)", borderStyle: "dashed", alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 40 }}>📷</Text>
                 <Text style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 6 }}>Tap to add</Text>
               </View>
             )}
@@ -298,19 +318,17 @@ export default function ContactOnboardingView() {
             </TouchableOpacity>
           )}
         </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+      </LinearGradient>
+    </SafeAreaView>
   );
 
   // ── Slide 6: Your phone number ─────────────────────────────────────────────
   if (slide === 6) return (
-    <LinearGradient colors={["#0c2d5a", "#185FA5"]} style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#0c2d5a" }}>
+      <LinearGradient colors={["#0c2d5a", "#185FA5"]} style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
-        <DarkToggle />
-        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 110 }} keyboardShouldPersistTaps="handled">
-          <Text style={{ fontSize: 64, marginBottom: 16 }}>📞</Text>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 116 }} keyboardShouldPersistTaps="handled">
           <Text style={{ fontSize: 26, fontWeight: "800", color: "#fff", textAlign: "center", marginBottom: 8, lineHeight: 36 }}>
             What's your phone number?
           </Text>
@@ -335,19 +353,17 @@ export default function ContactOnboardingView() {
             <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>Skip for now</Text>
           </TouchableOpacity>
         </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+      </LinearGradient>
+    </SafeAreaView>
   );
 
   // ── Slide 7: Backup phone number ───────────────────────────────────────────
   if (slide === 7) return (
-    <LinearGradient colors={["#185FA5", "#071829"]} style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#185FA5" }}>
+      <LinearGradient colors={["#185FA5", "#071829"]} style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
-        <DarkToggle />
-        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 110 }} keyboardShouldPersistTaps="handled">
-          <Text style={{ fontSize: 64, marginBottom: 16 }}>📱</Text>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 116 }} keyboardShouldPersistTaps="handled">
           <Text style={{ fontSize: 26, fontWeight: "800", color: "#fff", textAlign: "center", marginBottom: 8, lineHeight: 36 }}>
             Add a backup number
           </Text>
@@ -372,51 +388,87 @@ export default function ContactOnboardingView() {
             <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>Skip for now</Text>
           </TouchableOpacity>
         </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+      </LinearGradient>
+    </SafeAreaView>
   );
 
-  // ── Slide 8: Confirmation message ─────────────────────────────────────────
+  // ── Slide 8: Email address ────────────────────────────────────────────────
   if (slide === 8) return (
-    <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
-      <LinearGradient colors={["#071829", "#185FA5"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#071829" }}>
+      <LinearGradient colors={["#071829", "#0c2d5a"]} style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
-        <DarkToggle />
-        <Text style={{ fontSize: 64, marginBottom: 24 }}>🌟</Text>
-        <Text style={{ fontSize: 26, fontWeight: "800", color: "#fff", textAlign: "center", lineHeight: 38, maxWidth: 320 }}>
-          {caregiverName || "You"}, together we can help keep {lovedOneName || "your loved one"} independent while making sure they're properly being taken care of.
-        </Text>
-        <TapHint />
+        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 116 }} keyboardShouldPersistTaps="handled">
+          <Text style={{ fontSize: 26, fontWeight: "800", color: "#fff", textAlign: "center", marginBottom: 8, lineHeight: 36 }}>
+            What's your email address?
+          </Text>
+          <Text style={{ fontSize: 15, color: "rgba(255,255,255,0.7)", textAlign: "center", marginBottom: 8, maxWidth: 300, lineHeight: 24 }}>
+            We'll only use this to send you your PIN if you ever forget it.
+          </Text>
+          <Text style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", textAlign: "center", marginBottom: 28, maxWidth: 280, lineHeight: 20, fontStyle: "italic" }}>
+            We will never share your email or use it for marketing.
+          </Text>
+          <TextInput
+            ref={emailRef}
+            value={email}
+            onChangeText={(v) => { setEmail(v); setEmailError(""); }}
+            onSubmitEditing={handleEmailNext}
+            placeholder="your@email.com"
+            placeholderTextColor="rgba(255,255,255,0.45)"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={{ ...inputStyle, alignSelf: "center" }}
+          />
+          {!!emailError && (
+            <Text style={{ fontSize: 13, color: "#fca5a5", marginBottom: 12, textAlign: "center" }}>{emailError}</Text>
+          )}
+          <ContinueBtn active={!!email.trim()} onPress={handleEmailNext} />
+          <TouchableOpacity onPress={next} style={{ marginTop: 16 }}>
+            <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 14 }}>Skip for now</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </LinearGradient>
-    </TouchableOpacity>
+    </SafeAreaView>
   );
 
-  // ── Slide 9: Peace of mind ─────────────────────────────────────────────────
+  // ── Slide 9: Confirmation message ─────────────────────────────────────────
   if (slide === 9) return (
-    <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
-      <LinearGradient colors={["#185FA5", "#0c2d5a"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
-        <ProgressBar />
-        <BackBtn />
-        <DarkToggle />
-        <Text style={{ fontSize: 72, marginBottom: 24 }}>☮️</Text>
-        <Text style={{ fontSize: 34, fontWeight: "800", color: "#fff", textAlign: "center", lineHeight: 44, marginBottom: 12 }}>Peace of mind starts now.</Text>
-        <Text style={{ fontSize: 22, color: "rgba(255,255,255,0.85)", textAlign: "center", lineHeight: 32, marginBottom: 8 }}>Embrace your loved one.</Text>
-        <Text style={{ fontSize: 26, fontWeight: "700", color: "#fff", textAlign: "center" }}>That's Hunky Dory. 🫂</Text>
-        <TapHint />
-      </LinearGradient>
-    </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#071829" }}>
+      <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
+        <LinearGradient colors={["#071829", "#185FA5"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
+          <ProgressBar />
+          <BackBtn />
+          <Text style={{ fontSize: 34, fontWeight: "800", color: "#fff", textAlign: "center", lineHeight: 44, maxWidth: 320 }}>
+            Relax and feel the wind in your hair.
+          </Text>
+          <TapHint />
+        </LinearGradient>
+      </TouchableOpacity>
+    </SafeAreaView>
   );
 
-  // ── Slide 10: Create senior's username & PIN ──────────────────────────────
+  // ── Slide 10: Peace of mind ────────────────────────────────────────────────
   if (slide === 10) return (
-    <LinearGradient colors={["#0c2d5a", "#185FA5"]} style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#185FA5" }}>
+      <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
+        <LinearGradient colors={["#185FA5", "#0c2d5a"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
+          <ProgressBar />
+          <BackBtn />
+          <Text style={{ fontSize: 40, fontWeight: "800", color: "#fff", textAlign: "center", lineHeight: 50 }}>Everything is Hunky Dory.</Text>
+          <TapHint />
+        </LinearGradient>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+
+  // ── Slide 11: Create senior's username & PIN ──────────────────────────────
+  if (slide === 11) return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#0c2d5a" }}>
+      <LinearGradient colors={["#0c2d5a", "#185FA5"]} style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
-        <DarkToggle />
-        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 110 }} keyboardShouldPersistTaps="handled">
-          <Text style={{ fontSize: 64, marginBottom: 16 }}>🔑</Text>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 116 }} keyboardShouldPersistTaps="handled">
           <Text style={{ fontSize: 24, fontWeight: "800", color: "#fff", textAlign: "center", marginBottom: 8, lineHeight: 34 }}>
             Create a username and PIN for {lovedOneName || "your loved one"}
           </Text>
@@ -463,19 +515,17 @@ export default function ContactOnboardingView() {
           <View style={{ marginBottom: 20 }} />
           <ContinueBtn active={!!seniorUsername.trim() && seniorPin.length === 4} onPress={handleSeniorCredentialsNext} />
         </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+      </LinearGradient>
+    </SafeAreaView>
   );
 
-  // ── Slide 11: Create your own sign-in PIN ─────────────────────────────────
-  if (slide === 11) return (
-    <LinearGradient colors={["#185FA5", "#071829"]} style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }}>
+  // ── Slide 12: Create your own sign-in PIN ─────────────────────────────────
+  if (slide === 12) return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#185FA5" }}>
+      <LinearGradient colors={["#185FA5", "#071829"]} style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
-        <DarkToggle />
-        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 110 }} keyboardShouldPersistTaps="handled">
-          <Text style={{ fontSize: 64, marginBottom: 16 }}>🔐</Text>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 116 }} keyboardShouldPersistTaps="handled">
           <Text style={{ fontSize: 24, fontWeight: "800", color: "#fff", textAlign: "center", marginBottom: 8, lineHeight: 34 }}>
             Create your sign-in PIN
           </Text>
@@ -519,31 +569,60 @@ export default function ContactOnboardingView() {
           <View style={{ marginBottom: 20 }} />
           <ContinueBtn active={newPin.length === 4 && pinConfirm.length === 4} onPress={handleCredentialsNext} />
         </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+      </LinearGradient>
+    </SafeAreaView>
   );
 
-  // ── Slide 12: Subscription ────────────────────────────────────────────────
+  // ── Slide 13: Medical disclaimer ─────────────────────────────────────────
+  if (slide === 13) return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#071829" }}>
+      <LinearGradient colors={["#071829", "#0c2d5a"]} style={{ flex: 1 }}>
+        <ProgressBar />
+        <BackBtn />
+        <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 40, paddingTop: 116 }} keyboardShouldPersistTaps="handled">
+          <Text style={{ fontSize: 26, fontWeight: "800", color: "#fff", textAlign: "center", marginBottom: 8, lineHeight: 36 }}>
+            One more thing
+          </Text>
+          <Text style={{ fontSize: 16, color: "rgba(255,255,255,0.7)", textAlign: "center", marginBottom: 32, maxWidth: 300, lineHeight: 24 }}>
+            Please read and acknowledge the following before continuing.
+          </Text>
+          <TouchableOpacity
+            onPress={() => setMedDisclaimerChecked(v => !v)}
+            activeOpacity={0.8}
+            style={{ flexDirection: "row", alignItems: "flex-start", gap: 14, width: "100%", maxWidth: 320, marginBottom: 32, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 16, padding: 18 }}
+          >
+            <View style={{
+              width: 26, height: 26, borderRadius: 6, borderWidth: 2,
+              borderColor: medDisclaimerChecked ? "#fff" : "rgba(255,255,255,0.5)",
+              backgroundColor: medDisclaimerChecked ? "#fff" : "transparent",
+              alignItems: "center", justifyContent: "center", marginTop: 2, flexShrink: 0,
+            }}>
+              {medDisclaimerChecked && <Text style={{ fontSize: 16, color: "#071829", fontWeight: "900" }}>✓</Text>}
+            </View>
+            <Text style={{ flex: 1, fontSize: 15, color: "#fff", lineHeight: 24 }}>
+              I understand that medication reminders in Hunky Dory are for personal family use only and do not replace professional medical advice, prescriptions, or clinical care.
+            </Text>
+          </TouchableOpacity>
+          <ContinueBtn active={medDisclaimerChecked} onPress={next} />
+        </ScrollView>
+      </LinearGradient>
+    </SafeAreaView>
+  );
+
+  // ── Slide 14: Subscription ────────────────────────────────────────────────
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: dm ? "#0f172a" : "#f8fafc" }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 48 }}>
-        <LinearGradient colors={["#185FA5", "#0c2d5a"]} style={{ padding: 44, paddingBottom: 36, alignItems: "center", position: "relative" }}>
-          <View style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, backgroundColor: "rgba(255,255,255,0.2)" }}>
-            <View style={{ height: 4, backgroundColor: "rgba(255,255,255,0.9)", width: "100%" }} />
-          </View>
+        <View style={{ position: "relative" }}>
+          <HunkyDoryBanner bgColor="#185FA5" />
           <BackBtn />
-          <TouchableOpacity
-            onPress={toggleDarkMode}
-            style={{ position: "absolute", top: 62, right: 20, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}
-          >
-            <Text style={{ fontSize: 18 }}>{dm ? "☀️" : "🌙"}</Text>
-          </TouchableOpacity>
-          <Text style={{ fontSize: 52, marginBottom: 10, marginTop: 16 }}>🫂</Text>
-          <Text style={{ fontSize: 24, fontWeight: "800", color: "#fff", marginBottom: 6 }}>Hunky Dory Premium</Text>
-          <Text style={{ fontSize: 15, color: "rgba(255,255,255,0.8)", lineHeight: 24, textAlign: "center" }}>
-            Keep {lovedOneName || "your loved one"} safe — free for 3 days.
-          </Text>
-        </LinearGradient>
+          <LinearGradient colors={["#185FA5", "#0c2d5a"]} style={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 24, alignItems: "center" }}>
+            <Text style={{ fontSize: 22, fontWeight: "800", color: "#fff", marginBottom: 6 }}>Hunky Dory Premium</Text>
+            <Text style={{ fontSize: 15, color: "rgba(255,255,255,0.8)", lineHeight: 24, textAlign: "center" }}>
+              Keep {lovedOneName || "your loved one"} safe — free for 3 days.
+            </Text>
+          </LinearGradient>
+        </View>
 
         {/* Stay signed in toggle */}
         <View style={{ margin: 16, marginBottom: 0, padding: 18, backgroundColor: dm ? "#1e293b" : "#fff", borderRadius: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderColor: dm ? "#334155" : "#e5e7eb" }}>
