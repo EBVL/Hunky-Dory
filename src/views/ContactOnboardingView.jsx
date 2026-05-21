@@ -168,7 +168,7 @@ export default function ContactOnboardingView() {
   // ── Slide 0: It's time to breathe ─────────────────────────────────────────
   if (slide === 0) return (
     <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
-      <LinearGradient colors={dm ? ["#0f172a", "#2d1b69"] : ["#1a1a2e", "#2d1b69"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
+      <LinearGradient colors={["#071829", "#0c2d5a"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
         <ProgressBar />
         <BackBtn />
         <DarkToggle />
@@ -182,7 +182,7 @@ export default function ContactOnboardingView() {
   // ── Slide 1: Your loved one is safe ───────────────────────────────────────
   if (slide === 1) return (
     <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
-      <LinearGradient colors={["#2d1b69", "#4f172a"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
+      <LinearGradient colors={["#0c2d5a", "#185FA5"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
         <ProgressBar />
         <BackBtn />
         <DarkToggle />
@@ -196,7 +196,7 @@ export default function ContactOnboardingView() {
   // ── Slide 2: With Hunky Dory ───────────────────────────────────────────────
   if (slide === 2) return (
     <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
-      <LinearGradient colors={["#4f172a", "#7c3aed"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
+      <LinearGradient colors={["#185FA5", "#1a72c4"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
         <ProgressBar />
         <BackBtn />
         <DarkToggle />
@@ -211,7 +211,7 @@ export default function ContactOnboardingView() {
 
   // ── Slide 3: Loved one's name ──────────────────────────────────────────────
   if (slide === 3) return (
-    <LinearGradient colors={["#7c3aed", "#2563eb"]} style={{ flex: 1 }}>
+    <LinearGradient colors={["#1a72c4", "#185FA5"]} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
@@ -236,7 +236,7 @@ export default function ContactOnboardingView() {
 
   // ── Slide 4: Caregiver's name ──────────────────────────────────────────────
   if (slide === 4) return (
-    <LinearGradient colors={["#2563eb", "#0891b2"]} style={{ flex: 1 }}>
+    <LinearGradient colors={["#185FA5", "#0e4d7a"]} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
@@ -264,7 +264,7 @@ export default function ContactOnboardingView() {
 
   // ── Slide 5: Your photo ────────────────────────────────────────────────────
   if (slide === 5) return (
-    <LinearGradient colors={["#0891b2", "#0e7490"]} style={{ flex: 1 }}>
+    <LinearGradient colors={["#0e4d7a", "#0c2d5a"]} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
@@ -304,7 +304,7 @@ export default function ContactOnboardingView() {
 
   // ── Slide 6: Your phone number ─────────────────────────────────────────────
   if (slide === 6) return (
-    <LinearGradient colors={["#0e7490", "#0369a1"]} style={{ flex: 1 }}>
+    <LinearGradient colors={["#0c2d5a", "#185FA5"]} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
@@ -341,7 +341,7 @@ export default function ContactOnboardingView() {
 
   // ── Slide 7: Backup phone number ───────────────────────────────────────────
   if (slide === 7) return (
-    <LinearGradient colors={["#0369a1", "#1d4ed8"]} style={{ flex: 1 }}>
+    <LinearGradient colors={["#185FA5", "#071829"]} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
@@ -379,7 +379,7 @@ export default function ContactOnboardingView() {
   // ── Slide 8: Confirmation message ─────────────────────────────────────────
   if (slide === 8) return (
     <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
-      <LinearGradient colors={["#1d4ed8", "#16a34a"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
+      <LinearGradient colors={["#071829", "#185FA5"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
         <ProgressBar />
         <BackBtn />
         <DarkToggle />
@@ -395,7 +395,7 @@ export default function ContactOnboardingView() {
   // ── Slide 9: Peace of mind ─────────────────────────────────────────────────
   if (slide === 9) return (
     <TouchableOpacity activeOpacity={1} onPress={next} style={{ flex: 1 }}>
-      <LinearGradient colors={["#16a34a", "#1a1a2e"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
+      <LinearGradient colors={["#185FA5", "#0c2d5a"]} style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 40 }}>
         <ProgressBar />
         <BackBtn />
         <DarkToggle />
@@ -410,7 +410,7 @@ export default function ContactOnboardingView() {
 
   // ── Slide 10: Create senior's username & PIN ──────────────────────────────
   if (slide === 10) return (
-    <LinearGradient colors={["#1a1a2e", "#7c3aed"]} style={{ flex: 1 }}>
+    <LinearGradient colors={["#0c2d5a", "#185FA5"]} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
@@ -469,7 +469,7 @@ export default function ContactOnboardingView() {
 
   // ── Slide 11: Create your own sign-in PIN ─────────────────────────────────
   if (slide === 11) return (
-    <LinearGradient colors={["#7c3aed", "#1a1a2e"]} style={{ flex: 1 }}>
+    <LinearGradient colors={["#185FA5", "#071829"]} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
         <ProgressBar />
         <BackBtn />
@@ -527,7 +527,7 @@ export default function ContactOnboardingView() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: dm ? "#0f172a" : "#f8fafc" }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 48 }}>
-        <LinearGradient colors={["#7c3aed", "#5b21b6"]} style={{ padding: 44, paddingBottom: 36, alignItems: "center", position: "relative" }}>
+        <LinearGradient colors={["#185FA5", "#0c2d5a"]} style={{ padding: 44, paddingBottom: 36, alignItems: "center", position: "relative" }}>
           <View style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, backgroundColor: "rgba(255,255,255,0.2)" }}>
             <View style={{ height: 4, backgroundColor: "rgba(255,255,255,0.9)", width: "100%" }} />
           </View>

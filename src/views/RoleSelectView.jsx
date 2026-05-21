@@ -13,10 +13,12 @@ export default function RoleSelectView() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
-      {/* Hero banner with your logo + wordmark */}
-      <HunkyDoryBanner bgColor="#185FA5" />
 
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
+      {/* Top third — hero banner */}
+      <HunkyDoryBanner bgColor="#185FA5" style={{ flex: 1 }} />
+
+      {/* Bottom two thirds — role selection */}
+      <View style={{ flex: 2, alignItems: "center", justifyContent: "center", padding: 24 }}>
 
         <TouchableOpacity
           onPress={toggleDarkMode}
@@ -25,7 +27,7 @@ export default function RoleSelectView() {
           <Text style={{ fontSize: 18 }}>{dm ? "☀️" : "🌙"}</Text>
         </TouchableOpacity>
 
-        <Text style={{ fontSize: 16, color: subtext, textAlign: "center", marginBottom: 40, lineHeight: 26, maxWidth: 300 }}>
+        <Text style={{ fontSize: 16, color: subtext, textAlign: "center", marginBottom: 36, lineHeight: 26, maxWidth: 300 }}>
           Staying close to the people who matter most.
         </Text>
 
@@ -47,6 +49,7 @@ export default function RoleSelectView() {
           </TouchableOpacity>
         </View>
       </View>
+
     </SafeAreaView>
   );
 }

@@ -1,10 +1,9 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import Svg, { G, Line, Path, Text as SvgText } from "react-native-svg";
 
-function HunkyDoryLogo({ width = 110, color = "white" }) {
-  const scale = width / 110;
-  const svgW = 400 * scale;
-  const svgH = 320 * scale;
+export function HunkyDoryLogo({ width = 80, color = "white" }) {
+  const svgW = 400 * (width / 110);
+  const svgH = 320 * (width / 110);
   return (
     <Svg width={svgW} height={svgH} viewBox="0 0 400 320">
       <G transform="rotate(-7, 200, 220)">
@@ -18,7 +17,7 @@ function HunkyDoryLogo({ width = 110, color = "white" }) {
   );
 }
 
-function HunkyDoryWordmark({ width = 280, color = "white" }) {
+export function HunkyDoryWordmark({ width = 260, color = "white" }) {
   return (
     <Svg viewBox="0 0 400 60" width={width} height={width * 60 / 400}>
       <SvgText
@@ -37,11 +36,14 @@ function HunkyDoryWordmark({ width = 280, color = "white" }) {
 }
 
 // Full hero banner — used on the welcome/front page
-export function HunkyDoryBanner({ bgColor = "#185FA5" }) {
+export function HunkyDoryBanner({ bgColor = "#185FA5", style }) {
   return (
-    <View style={{ backgroundColor: bgColor, paddingVertical: 28, paddingHorizontal: 32, alignItems: "center", width: "100%" }}>
-      <HunkyDoryLogo width={110} />
-      <HunkyDoryWordmark width={280} />
+    <View style={[{ backgroundColor: bgColor, alignItems: "center", justifyContent: "center", width: "100%", paddingVertical: 20 }, style]}>
+      <HunkyDoryLogo width={75} />
+      <HunkyDoryWordmark width={260} />
+      <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 14, fontStyle: "italic", marginTop: 6, letterSpacing: 0.3 }}>
+        sailing the seas of life together
+      </Text>
     </View>
   );
 }
@@ -60,10 +62,9 @@ export default function HunkyDoryHeader({
   return (
     <View style={{ backgroundColor: bgColor, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        {/* Logo + wordmark side by side in compact form */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <HunkyDoryLogo width={36} />
-          <HunkyDoryWordmark width={120} />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <HunkyDoryLogo width={32} />
+          <HunkyDoryWordmark width={110} />
         </View>
         <View style={{ flexDirection: "row", gap: 8 }}>
           {!!onToggleDarkMode && (
