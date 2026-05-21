@@ -3,6 +3,7 @@ import { useRef, useState, useEffect } from "react";
 import { Image } from "react-native";
 import { useApp, parseTimeStr } from "../AppContext";
 import * as Haptics from "expo-haptics";
+import HunkyDoryHeader from "../components/HunkyDoryHeader";
 
 const C = {
   green:        "#3B6D11",
@@ -203,31 +204,14 @@ export default function SeniorView() {
       <MessageModal />
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <View style={{ backgroundColor: C.dark, paddingHorizontal: 24, paddingTop: 18, paddingBottom: 22 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <View>
-            <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 3 }}>{today()}</Text>
-            <Text style={{ fontSize: 22, fontWeight: "800", color: C.white }}>🫂 Hunky Dory</Text>
-          </View>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity
-              onPress={toggleDarkMode}
-              style={{ backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8 }}
-            >
-              <Text style={{ fontSize: 16 }}>🌙</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={seniorSignOut}
-              style={{ backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}
-            >
-              <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}>Sign Out</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <Text style={{ marginTop: 6, fontSize: 15, color: "rgba(255,255,255,0.7)" }}>
-          Good morning, {seniorName}! 👋
-        </Text>
-      </View>
+      <HunkyDoryHeader
+        label={today()}
+        title={`Good morning, ${seniorName}! 👋`}
+        bgColor={C.dark}
+        darkMode={darkMode}
+        onToggleDarkMode={toggleDarkMode}
+        onSignOut={seniorSignOut}
+      />
 
       {/* ── Scrollable body ─────────────────────────────────────────────────── */}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 8 }} showsVerticalScrollIndicator={false}>

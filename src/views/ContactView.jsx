@@ -1,4 +1,5 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, SafeAreaView, Modal, Image } from "react-native";
+import HunkyDoryHeader from "../components/HunkyDoryHeader";
 import { useState, useEffect } from "react";
 import { useApp } from "../AppContext";
 import * as Notifications from "expo-notifications";
@@ -253,22 +254,14 @@ export default function ContactView() {
       </Modal>
 
       {/* Header */}
-      <View style={{ backgroundColor: "#1e3a5f", paddingHorizontal: 24, paddingTop: 20, paddingBottom: 24 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <View>
-            <Text style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginBottom: 2 }}>🫂 Hunky Dory</Text>
-            <Text style={{ fontSize: 20, fontWeight: "700", color: "#fff" }}>Hi {contactName} 👋</Text>
-            <Text style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>Watching over {seniorName}</Text>
-          </View>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TouchableOpacity onPress={toggleDarkMode} style={{ backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 8 }}>
-              <Text style={{ fontSize: 18 }}>{dm ? "☀️" : "🌙"}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={contactSignOut} style={{ backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 }}>
-              <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13 }}>Sign Out</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      <HunkyDoryHeader
+        title={`Hi ${contactName} 👋`}
+        subtitle={`Watching over ${seniorName}`}
+        bgColor="#1e3a5f"
+        darkMode={dm}
+        onToggleDarkMode={toggleDarkMode}
+        onSignOut={contactSignOut}
+      >
         {missedCheckIn ? (
           <View style={{ marginTop: 16, padding: 14, backgroundColor: "rgba(220,38,38,0.25)", borderWidth: 1, borderColor: "rgba(220,38,38,0.4)", borderRadius: 14, flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Text style={{ fontSize: 22 }}>⚠️</Text>
@@ -287,7 +280,7 @@ export default function ContactView() {
             </Text>
           </View>
         )}
-      </View>
+      </HunkyDoryHeader>
 
       {/* Tabs */}
       <View style={{ flexDirection: "row", backgroundColor: cardBg, borderBottomWidth: 1, borderBottomColor: borderColor }}>
