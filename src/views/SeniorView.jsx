@@ -207,7 +207,7 @@ export default function SeniorView() {
       <HunkyDoryHeader
         label={today()}
         title={`Good morning, ${seniorName}! 👋`}
-        bgColor={C.dark}
+        bgColor="#185FA5"
         darkMode={darkMode}
         onToggleDarkMode={toggleDarkMode}
         onSignOut={seniorSignOut}

@@ -257,7 +257,7 @@ export default function ContactView() {
       <HunkyDoryHeader
         title={`Hi ${contactName} 👋`}
         subtitle={`Watching over ${seniorName}`}
-        bgColor="#1e3a5f"
+        bgColor="#185FA5"
         darkMode={dm}
         onToggleDarkMode={toggleDarkMode}
         onSignOut={contactSignOut}

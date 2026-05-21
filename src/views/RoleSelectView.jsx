@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, SafeAreaView } from "react-native";
 import { useApp } from "../AppContext";
+import { HunkyDoryBanner } from "../components/HunkyDoryHeader";
 
 export default function RoleSelectView() {
   const { setRole, darkMode, toggleDarkMode } = useApp();
@@ -12,6 +13,9 @@ export default function RoleSelectView() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: bg }}>
+      {/* Hero banner with your logo + wordmark */}
+      <HunkyDoryBanner bgColor="#185FA5" />
+
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
 
         <TouchableOpacity
@@ -21,11 +25,7 @@ export default function RoleSelectView() {
           <Text style={{ fontSize: 18 }}>{dm ? "☀️" : "🌙"}</Text>
         </TouchableOpacity>
 
-        <Text style={{ fontSize: 72, marginBottom: 8 }}>🫂</Text>
-        <Text style={{ fontSize: 34, fontWeight: "800", color: textColor, textAlign: "center", marginBottom: 6, letterSpacing: -0.5 }}>
-          Hunky Dory
-        </Text>
-        <Text style={{ fontSize: 16, color: subtext, textAlign: "center", marginBottom: 48, lineHeight: 26, maxWidth: 300 }}>
+        <Text style={{ fontSize: 16, color: subtext, textAlign: "center", marginBottom: 40, lineHeight: 26, maxWidth: 300 }}>
           Staying close to the people who matter most.
         </Text>
 
